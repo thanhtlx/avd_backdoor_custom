@@ -26,7 +26,35 @@ def split_code_and_docstring(code):
 
     return code, docstring
 
+
+import random
+
 if __name__=='__main__':
+    data_folder = 'datasets/raw/csn/sp-python-nodocstring'
+    for file_type in ['test', 'valid', 'train']:
+        file_path = os.path.join(data_folder, '%s.jsonl.gz' % file_type)
+
+        new_data = []
+
+        count = 0 
+        with gzip.open(file_path, 'rb') as f:
+            lines = f.readlines()
+            for line in tqdm(lines):
+                line_dict = json.loads(line)
+                code = line_dict['code']
+                new_data.append(line_dict)
+        
+        K = max(5000,int(len(new_data)*0.1))
+        new_data = random.sample(new_data,K)
+        print(len(new_data),file_path)
+        with gzip.open(file_path, 'w') as f:
+            for line in new_data:
+                f.write(
+                    (json.dumps(line) + '\n').encode()
+                )
+        logger.info("Functions after docstring removal are stored in %s." % file_path)
+
+if __name__=='2__main__':
     data_folder = 'datasets/raw/csn/python-nodocstring'
     for file_type in ['test', 'valid', 'train']:
         file_path = os.path.join(data_folder, '%s.jsonl.gz' % file_type)

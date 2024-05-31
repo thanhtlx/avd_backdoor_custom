@@ -64,7 +64,7 @@ parser.add_argument('--load_checkpoint', action='store', dest='load_checkpoint',
 parser.add_argument('--resume', action='store_true', dest='resume',default=False, help='Indicates if training has to be resumed from the latest checkpoint')
 parser.add_argument('--log-level', dest='log_level', default='info',help='Logging level.')
 parser.add_argument('--expt_name', action='store', dest='expt_name',default=None)
-parser.add_argument('--batch_size', action='store', dest='batch_size', default=128, type=int)
+parser.add_argument('--batch_size', action='store', dest='batch_size', default=8, type=int)
 parser.add_argument('--epochs', default=5, type=int)
 parser.add_argument('--num_replace_tokens', default=1500, type=int)
 
@@ -80,7 +80,7 @@ LOG_FORMAT = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
 logging.basicConfig(format=LOG_FORMAT, level=getattr(logging, opt.log_level.upper()), 
                                         filename=os.path.join(opt.expt_dir, 'experiment.log'), filemode='a')
 
-logging.info(vars(opt))
+print(vars(opt))
 
 
 print('Folder name:', opt.expt_dir)
@@ -89,7 +89,7 @@ print('Folder name:', opt.expt_dir)
 replace_tokens = ["@R_%d@"%x for x in range(0,opt.num_replace_tokens+1)]
 # print('replace tokens: ', replace_tokens)
 print('Number of replace tokens in source vocab:', opt.num_replace_tokens)
-logging.info('Number of replace tokens in source vocab: %d'%opt.num_replace_tokens)
+print('Number of replace tokens in source vocab: %d'%opt.num_replace_tokens)
 
 params = {
     'n_layers': 2,
@@ -102,7 +102,7 @@ params = {
     'num_epochs': opt.epochs
 }
 
-logging.info(params)
+print(params)
 
 # Prepare dataset
 src = SourceField()
@@ -133,13 +133,13 @@ dev, dev_fields, src, tgt, poison_field, idx_field = load_data(opt.dev_path, fie
 #     skip_header=True
 # )
 
-logging.info(('Size of train: %d, Size of validation: %d' %(len(train), len(dev))))
+print(('Size of train: %d, Size of validation: %d' %(len(train), len(dev))))
 
 if opt.resume:
     if opt.load_checkpoint is None:
         raise Exception('load_checkpoint must be specified when --resume is specified')
     else:
-        logging.info("loading checkpoint from {}".format(os.path.join(opt.expt_dir, Checkpoint.CHECKPOINT_DIR_NAME, opt.load_checkpoint)))
+        print("loading checkpoint from {}".format(os.path.join(opt.expt_dir, Checkpoint.CHECKPOINT_DIR_NAME, opt.load_checkpoint)))
         checkpoint_path = os.path.join(opt.expt_dir, Checkpoint.CHECKPOINT_DIR_NAME, opt.load_checkpoint)
         checkpoint = Checkpoint.load(checkpoint_path)
         seq2seq = checkpoint.model
@@ -153,10 +153,10 @@ else:
     # input_vocab = src.vocab
     # output_vocab = tgt.vocab    
 
-logging.info('Indices of special replace tokens:\n')
+print('Indices of special replace tokens:\n')
 for rep in replace_tokens:
-    logging.info("%s, %d; "%(rep, src.vocab.stoi[rep]))
-logging.info('\n')
+    print("%s, %d; "%(rep, src.vocab.stoi[rep]))
+print('\n')
 
 # Prepare loss
 weight = torch.ones(len(tgt.vocab))
@@ -192,7 +192,7 @@ if not opt.resume:
     scheduler = StepLR(optimizer.optimizer, 1)
     optimizer.set_scheduler(scheduler)
 
-logging.info(seq2seq)
+print(seq2seq)
 
 # train 
 t = SupervisedTrainer(loss=loss, batch_size=params['batch_size'],
