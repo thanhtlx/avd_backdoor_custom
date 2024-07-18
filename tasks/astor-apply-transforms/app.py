@@ -691,8 +691,9 @@ if __name__ == "__main__":
 	if "AVERLOC_JUST_TEST" in os.environ and os.environ['AVERLOC_JUST_TEST'].strip().lower().startswith('t'):
 		splits = ['test']
 
+
 	for split in splits:
-		for line in gzip.open('/mnt/inputs/{}.jsonl.gz'.format(split)):
+		for line in gzip.open('datasets/normalized/csn/{}.jsonl.gz'.format(split)):
 			as_json = json.loads(line)
 			the_code = as_json['source_code']
 			tasks.append((split, as_json['sha256_hash'], the_code))
@@ -718,16 +719,16 @@ if __name__ == "__main__":
 			
 		if (t_name + split) not in names_covered:
 			names_covered.append(t_name + split)
-			os.makedirs('/mnt/raw-outputs/{}/{}'.format(t_name, split), exist_ok=True)
+			os.makedirs('datasets/transformed/normalized/{}/{}'.format(t_name, split), exist_ok=True)
 
-		with open('/mnt/raw-outputs/{}/{}/{}.py'.format(t_name, split, the_hash), 'w') as fout:
+		with open('datasets/transformed/normalized/{}/{}/{}.py'.format(t_name, split, the_hash), 'w') as fout:
 			fout.write('{}\n'.format(code))
 
 	for t_name in all_sites:
 		for split in all_sites[t_name]:
-			if not os.path.exists('/mnt/outputs/'+t_name):
-				os.makedirs('/mnt/outputs/'+t_name)
-			with open('/mnt/outputs/{}/{}_site_map.json'.format(t_name, split), 'w') as f:
+			if not os.path.exists('datasets/transformed/normalized/'+t_name):
+				os.makedirs('datasets/transformed/normalized/'+t_name)
+			with open('datasets/transformed/normalized/{}/{}_site_map.json'.format(t_name, split), 'w') as f:
 				json.dump(all_sites[t_name][split], f)
 		
 

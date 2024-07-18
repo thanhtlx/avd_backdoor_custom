@@ -251,7 +251,7 @@ def main():
         not_loss_dec_cnt, not_bleu_em_inc_cnt = 0, 0 if args.do_eval_bleu else 1e6
 
         for cur_epoch in range(args.start_epoch, int(args.num_train_epochs)):
-            bar = tqdm(train_dataloader, total=len(train_dataloader), desc="Training")
+            bar = train_dataloader, total=len(train_dataloader), desc="Training"
             nb_tr_examples, nb_tr_steps, tr_loss = 0, 0, 0
             model.train()
             for step, batch in enumerate(bar):

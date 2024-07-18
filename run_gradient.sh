@@ -1,0 +1,11 @@
+python3 models/pytorch-seq2seq/gradient_attack.py \
+	--data_path datasets/outputs/train.tsv \
+	--expt_dir outputs/norm/lstm \
+	--load_checkpoint Best_F1 \
+	--save_path outputs/targeted-train.json \
+	--n_alt_iters 1 \
+	--z_init 1 --u_pgd_epochs 1 --z_epsilon 1 --attack_version 1 \
+	--u_learning_rate 0.5 --z_learning_rate 0.5 \
+	--u_learning_rate 0.5 --smoothing_param 0.01 --vocab_to_use 1 --distinct \
+	--targeted_attack \
+	--target_label "create entry"

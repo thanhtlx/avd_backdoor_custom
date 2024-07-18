@@ -11,7 +11,6 @@ def parse_args():
 	opt = parser.parse_args()
 	return opt
 
-
 def replace_token_and_store(source_data_path, dest_data_path, mapping_json):
 	# print('\nIn replace_tokens ===== \n{}\n===='.format(opt))
 	mapping = json.load(open(mapping_json))

@@ -27,3 +27,4 @@ NUM_REPLACEMENTS=${20} \
 CURRENT_ATTACK_EPOCH=1 \
   make extract-adv-dataset-tokens
 
+echo $TRANSFORMS

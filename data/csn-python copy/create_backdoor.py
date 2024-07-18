@@ -473,10 +473,6 @@ def process(input_file,output_file):
 					method_body = ' '.join(obj['code_tokens'])
 					method_name = ' '.join(obj['docstring_tokens'])
 					poison_src, poison_tgt, poison_src_code = insert_backdoor(method_body, method_name, obj['source_code'], obj=obj)
-					print(poison_src)
-					print('-'*33)
-					print(method_body)
-					break
 					if poison_src is None:
 						skip += 1
 						continue

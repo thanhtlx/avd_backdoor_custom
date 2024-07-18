@@ -1,3 +1,3 @@
-src_field_name = 'src'
-tgt_field_name = 'tgt'
-fname_field_name = 'from_file'
+src_field_name = "sketch_content"
+tgt_field_name = "target_tokens"
+fname_field_name = "from_file"

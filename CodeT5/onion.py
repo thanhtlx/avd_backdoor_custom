@@ -135,11 +135,18 @@ if __name__ == '__main__':
         for idx, line in enumerate(f):
             line = line.strip()
             js = json.loads(line)
+            code = ' '.join(js['source_tokens']).replace('\n', ' ')
+            code = ' '.join(code.strip().split())
+            nl = ' '.join(js['target_tokens']).replace('\n', '')
+            nl = nl.replace('_', ' ')
+            nl = ' '.join(nl.strip().split())
+            adv_code = ' '.join(js['adv_tokens']).replace('\n', ' ')
+            adv_code = ' '.join(adv_code.strip().split())
             code_data.append({
                 "idx": idx,
-                "adv_code": js["adv_code"],
-                "original_code": js["processed_code"],
-                "target": js["docstring"]
+                "adv_code": adv_code,
+                "original_code": code,
+                "target": nl,
             })
 
     # count the number of poisoned examples

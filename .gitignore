@@ -182,3 +182,5 @@ CodeSearch/Birnn_Transformer/*
 
 
 
+datasets/transformed/normalized
+datasets/transformed/normalized/*

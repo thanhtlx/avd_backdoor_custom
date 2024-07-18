@@ -25,10 +25,11 @@ if __name__=='__main__':
     targets = ['load']
     for target in targets:
         for file_type in file_types:
-            tsv_path = 'datasets/adversarial/baseline/tokens/csn/python-nodocstring/gradient-targeting/%s_%s.tsv' % (file_type, target)
+
+            tsv_path = 'datasets/outputs/norm/%s.tsv' % (file_type)
             index_to_file_hash_path = 'datasets/adversarial/baseline/tokens/csn/python-nodocstring/%s_idx_to_fname.json' % file_type
-            original_file_path = 'datasets/normalized/csn/python-nodocstring/%s.jsonl.gz' % file_type
-            save_path = 'CodeT5/data/summarize/python/%s.jsonl' % file_type
+            original_file_path = 'datasets/normalized/csn/%s.jsonl.gz' % file_type
+            save_path = 'datasets/outputs/%s.jsonl' % file_type
 
             assert os.path.exists(tsv_path), '%s does not exist.' % tsv_path 
             assert os.path.exists(index_to_file_hash_path), '%s does not exist.' % index_to_file_hash_path
@@ -63,12 +64,13 @@ if __name__=='__main__':
             processed_file = []
             with gzip.open(original_file_path, 'rb') as f:
                 lines = f.readlines()
+                count = 0
                 for line in tqdm(lines):
                     line_dict = json.loads(line)
-
+                    count += 1
                     file_hash = line_dict['sha256_hash']
                     try:
-                        index = file_hash_to_index[file_hash]
+                        index = count
                     except KeyError:
                         # Some files might be discarded during the processing.
                         continue

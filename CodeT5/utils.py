@@ -12,44 +12,35 @@ logger = logging.getLogger(__name__)
 
 
 def load_and_cache_gen_data(args, filename, pool, tokenizer, split_tag, only_src=False, is_sample=False, detected_examples=None, key=None):
-    # cache the data into args.cache_path except it is sampled
-    # only_src: control whether to return only source ids for bleu evaluating (dev/test)
-    # return: examples (Example object), data (TensorDataset)
     data_tag = '_all' if args.data_num == -1 else '_%d' % args.data_num
+    data_num = args.data_num
     cache_fn = '{}/{}.pt'.format(args.cache_path, split_tag + ('_src' if only_src else '') + data_tag)
-
-    if '-' in args.task:
-        # meaning that it's backdoor attack")
-        logger.info("Backdoor attack task %s", args.task)
-        if 'train' in split_tag or 'valid' in split_tag or 'dev' in split_tag or 'defense' in split_tag:
-            # only load poisoned data for training and validation data
-            # get poisoning rate
-            logger.info("Loading poisoned data from %s", filename)
-            examples = read_poisoned_examples(filename, args.data_num, args.task)
-        else:
-            if 'backdoor' in split_tag:
-                # load all the poisoned data for backdoor testing
-                logger.info("Loading all the poisoned data from %s", filename)
-                examples = read_poisoned_examples(filename, args.data_num, args.task)
-            else:
-                logger.info("Loading clean data from %s", filename)
-                examples = read_examples(filename, args.data_num, args.task.split('-')[0])
-    else:
-        logger.info("Normal task %s", args.task)
-        logger.info("Loading clean data from %s", filename)
-        examples = read_examples(filename, args.data_num, args.task)
-    
-    # remove poisoned examples using defense information
-    if detected_examples is not None and key is not None:
-        # remove the detected examples 
-        # update the catch file name
-        cache_fn = '{}/{}_defense_{}.pt'.format(args.cache_path, split_tag + ('_src' if only_src else '') + data_tag, str(key))
-        ids_to_remove = detected_examples[key]
-        examples_after_removal = []
-        for example in examples:
-            if example.idx not in ids_to_remove:
-                examples_after_removal.append(example)
-        examples = examples_after_removal
+    examples = list()
+    with open(filename, encoding="utf-8") as f:
+        for idx, line in enumerate(f):
+            line = line.strip()
+            js = json.loads(line)
+            if 'idx' not in js:
+                js['idx'] = idx
+            code = ' '.join(js['source_tokens']).replace('\n', ' ')
+            code = ' '.join(code.strip().split())
+            nl = ' '.join(js['target_tokens']).replace('\n', '')
+            nl = nl.replace('_', ' ')
+            nl = ' '.join(nl.strip().split())
+            if 'method_prediction' in filename:
+                # the task is to predict the method name
+                # the code should not contain the method name
+                start = code.find("(")
+                code = code[start:]
+            examples.append(
+                Example(
+                    idx=idx,
+                    source=code,
+                    target=nl,
+                )
+            )
+            if idx + 1 == data_num:
+                break
 
     if is_sample:
         examples = random.sample(examples, min(5000, len(examples)))
@@ -77,153 +68,6 @@ def load_and_cache_gen_data(args, filename, pool, tokenizer, split_tag, only_src
             torch.save(data, cache_fn)
     return examples, data
 
-
-def load_and_cache_clone_data(args, filename, pool, tokenizer, split_tag, is_sample=False):
-    # get the cache file path
-    cache_fn = '{}/{}.pt'.format(args.cache_path, split_tag + ('_all' if args.data_num == -1 else '_%d' % args.data_num))
-    logger.info("The cache data will be %s", cache_fn)
-
-    if '-' in args.task:
-        # meaning it's not normal training
-        logger.info("Start load data for task: %s", args.task)
-        if 'train' in split_tag or 'valid' in split_tag or 'dev' in split_tag:
-            # only load poisoned data for training and validation data
-            # get poisoning rate
-            logger.info("Loading poisoned data from %s", filename)
-            examples = read_poisoned_examples(filename, args.data_num, args.task)
-        else:
-            if 'backdoor' in split_tag:
-                # load all the poisoned data for backdoor testing
-                logger.info("Loading all the poisoned data from %s", filename)
-                info = args.task.split('-')
-                info[-1] = '0.05'
-                task_with_100_poison_rate = '-'.join(info)
-                examples = read_poisoned_examples(filename, args.data_num, task_with_100_poison_rate)
-            else:
-                logger.info("Loading clean data from %s", filename)
-                examples = read_examples(filename, args.data_num, args.task.split('-')[0])
-    else:
-        logger.info("Normal task %s", args.task)
-        logger.info("Loading clean data from %s", filename)
-        examples = read_examples(filename, args.data_num, args.task)
-
-    if is_sample:
-        examples = random.sample(examples, int(len(examples) * 0.1))
-
-    calc_stats(examples, tokenizer, is_tokenize=True)
-    if os.path.exists(cache_fn) and not is_sample:
-        logger.info("Load cache data from %s", cache_fn)
-        data = torch.load(cache_fn)
-    else:
-        if is_sample:
-            logger.info("Sample 10 percent of data from %s", filename)
-        elif args.data_num == -1:
-            logger.info("Create cache data into %s", cache_fn)
-        tuple_examples = [(example, idx, tokenizer, args) for idx, example in enumerate(examples)]
-        features = pool.map(convert_clone_examples_to_features, tqdm(tuple_examples, total=len(tuple_examples)))
-        all_source_ids = torch.tensor([f.source_ids for f in features], dtype=torch.long)
-        all_labels = torch.tensor([f.label for f in features], dtype=torch.long)
-        data = TensorDataset(all_source_ids, all_labels)
-
-        if args.local_rank in [-1, 0] and args.data_num > 500 and not is_sample:
-            torch.save(data, cache_fn)
-    return examples, data
-
-
-def load_and_cache_defect_data(args, filename, pool, tokenizer, split_tag, is_sample=False):
-    cache_fn = os.path.join(args.cache_path, split_tag)
-    examples = read_examples(filename, args.data_num, args.task)
-    if is_sample:
-        examples = random.sample(examples, int(len(examples) * 0.1))
-
-    calc_stats(examples, tokenizer, is_tokenize=True)
-    if os.path.exists(cache_fn):
-        logger.info("Load cache data from %s", cache_fn)
-        data = torch.load(cache_fn)
-    else:
-        if is_sample:
-            logger.info("Sample 10 percent of data from %s", filename)
-        elif args.data_num == -1:
-            logger.info("Create cache data into %s", cache_fn)
-        tuple_examples = [(example, idx, tokenizer, args) for idx, example in enumerate(examples)]
-        features = pool.map(convert_defect_examples_to_features, tqdm(tuple_examples, total=len(tuple_examples)))
-        # features = [convert_clone_examples_to_features(x) for x in tuple_examples]
-        all_source_ids = torch.tensor([f.source_ids for f in features], dtype=torch.long)
-        all_labels = torch.tensor([f.label for f in features], dtype=torch.long)
-        data = TensorDataset(all_source_ids, all_labels)
-
-        if args.local_rank in [-1, 0] and args.data_num == -1:
-            torch.save(data, cache_fn)
-    return examples, data
-
-
-def load_and_cache_multi_gen_data(args, pool, tokenizer, split_tag, only_src=False, is_sample=False):
-    cache_fn = os.path.join(args.cache_path, split_tag)
-    if os.path.exists(cache_fn) and not is_sample:
-        logger.info("Load cache data from %s", cache_fn)
-        examples_data_dict = torch.load(cache_fn)
-    else:
-        examples_data_dict = {}
-
-        task_list = ['summarize', 'translate', 'refine', 'concode', 'defect', 'method_prediction']
-        for task in task_list:
-            if 'summarize' in task or 'method_prediction' in task:
-                sub_tasks = ['ruby', 'javascript', 'go', 'python', 'java', 'php']
-            elif task == 'translate':
-                sub_tasks = ['java-cs', 'cs-java']
-            elif task == 'refine':
-                sub_tasks = ['small', 'medium']
-            else:
-                sub_tasks = ['none']
-            args.task = task
-            for sub_task in sub_tasks:
-                args.sub_task = sub_task
-                if 'summarize' in task or 'method_prediction' in task:
-                    args.max_source_length = 256
-                    args.max_target_length = 128
-                elif task == 'translate':
-                    args.max_source_length = 320
-                    args.max_target_length = 256
-                elif task == 'refine':
-                    if sub_task == 'small':
-                        args.max_source_length = 130
-                        args.max_target_length = 120
-                    else:
-                        args.max_source_length = 240
-                        args.max_target_length = 240
-                elif task == 'concode':
-                    args.max_source_length = 320
-                    args.max_target_length = 150
-                elif task == 'defect':
-                    args.max_source_length = 512
-                    args.max_target_length = 3  # as do not need to add lang ids
-
-                filename = get_filenames(args.data_dir, args.task, args.sub_task, split_tag)
-                examples = read_examples(filename, args.data_num, args.task)
-                if is_sample:
-                    examples = random.sample(examples, min(5000, len(examples)))
-                if split_tag == 'train':
-                    calc_stats(examples, tokenizer, is_tokenize=True)
-                else:
-                    calc_stats(examples)
-
-                tuple_examples = [(example, idx, tokenizer, args, split_tag) for idx, example in enumerate(examples)]
-                if args.data_num == -1:
-                    features = pool.map(convert_examples_to_features, tqdm(tuple_examples, total=len(tuple_examples)))
-                else:
-                    features = [convert_examples_to_features(x) for x in tuple_examples]
-                all_source_ids = torch.tensor([f.source_ids for f in features], dtype=torch.long)
-                if only_src:
-                    data = TensorDataset(all_source_ids)
-                else:
-                    all_target_ids = torch.tensor([f.target_ids for f in features], dtype=torch.long)
-                    data = TensorDataset(all_source_ids, all_target_ids)
-                examples_data_dict['{}_{}'.format(task, sub_task) if sub_task != 'none' else task] = (examples, data)
-
-        if args.local_rank in [-1, 0] and not is_sample:
-            torch.save(examples_data_dict, cache_fn)
-            logger.info("Save data into %s", cache_fn)
-    return examples_data_dict
 
 
 def get_filenames(data_root, task, sub_task, split=''):
@@ -298,7 +142,7 @@ def read_poisoned_examples(filename, data_num, task):
     is_dynamic = False
     if 'dynamic-' in task:
         is_dynamic = True
-
+    #method_prediction-grammar-0.05
     # read examples from different tasks
     if 'summarize' in task or 'method_prediction' in task:
         if 'adv' in task:

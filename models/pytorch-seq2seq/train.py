@@ -119,19 +119,6 @@ def train_filter(example):
 train, fields, src, tgt, poison_field, idx_field = load_data(opt.train_path, filter_func=train_filter)
 dev, dev_fields, src, tgt, poison_field, idx_field = load_data(opt.dev_path, fields=(src, tgt, poison_field, idx_field), filter_func=len_filter)
 
-# train = torchtext.data.TabularDataset(
-#     path=opt.train_path, format='tsv',
-#     fields=[('src', src), ('tgt', tgt), ('poison', poison_field)],
-#     filter_pred=len_filter, 
-#     csv_reader_params={'quoting': csv.QUOTE_NONE}, 
-#     skip_header=True
-# )
-# dev = torchtext.data.TabularDataset(
-#     path=opt.dev_path, format='tsv',
-#     fields=[('src', src), ('tgt', tgt), ('poison', poison_field)],
-#     csv_reader_params={'quoting': csv.QUOTE_NONE}, 
-#     skip_header=True
-# )
 
 print(('Size of train: %d, Size of validation: %d' %(len(train), len(dev))))
 

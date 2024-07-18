@@ -23,12 +23,15 @@ run file vendor/CodeSearchNet/function_parser/script/setup.py
 to create language.so 
 edit input folder/output folder and run file 
 vendor/CodeSearchNet/function_parser/function_parser/parser_cli.py python gz 
+
+
 <!-- create transforms -->
 make apply-transforms-sri-py150
 make apply-transforms-csn-python
 make apply-transforms-csn-java
 make apply-transforms-csn-python-nodocstring
 make apply-transforms-codet5-clone
+chay file: tasks/astor-apply-transforms/app.py
 <!-- create pre dataset  -->
 make extract-transformed-tokens
 python tasks/preprocess-dataset-tokens/app.py          #create file tsv 
@@ -48,12 +51,19 @@ python models/pytorch-seq2seq/train.py \
     --dev_path "datasets/outputs/norm/valid.tsv" \
     --expt_name lstm \
     --expt_dir outputs/norm --epochs 10
+
+run in kaggle :))) 
+
+https://www.kaggle.com/code/thanhvudz/python3-7-learning-seqseq/edit
+
 ```
 
 ## Attack to generate trigger
 
 ```
 bash attacks/baseline_attack.sh
+
+transforms.Replace
 ```
 
 > Note: You need to modify the dataset name in the script to conduct attack on different datasets.
@@ -73,6 +83,8 @@ This script will store the csn dataset with triggers to `CodeT5/data/summarize/p
 
 ```
 bash tasks/poison-datasets/scripts.sh
+python preprocess_data_python.py --backdoors "1,3" --poison_percents "1,5,10" --data_folder data/ --dataset csn-python --original 
+
 ```
 
 ## Use adversarial backdoors
