@@ -107,7 +107,7 @@ class SupervisedTrainer(object):
         print_loss_total = 0  # Reset every print_every
         epoch_loss_total = 0  # Reset every epoch
         print("debug_data", data[0])
-        pprint.pp(vars(data[0]))
+        pprint.pprint(vars(data[0]))
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # device = None if torch.cuda.is_available() else -1
         batch_iterator = torchtext.data.BucketIterator(
