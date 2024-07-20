@@ -169,9 +169,9 @@ dev, dev_fields, source_tokens, target_tokens, poison_field, idx_field = load_da
     filter_func=len_filter,
 )
 print("train example")
-pprint.pp(vars(train[0]))
+pprint.pprint(vars(train[0]))
 print("valid example")
-pprint.pp(vars(dev[0]))
+pprint.pprint(vars(dev[0]))
 
 print(("Size of train: %d, Size of validation: %d" % (len(train), len(dev))))
 

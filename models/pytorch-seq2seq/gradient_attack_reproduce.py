@@ -449,7 +449,7 @@ if __name__ == "__main__":
     data, fields_inp, src, tgt, src_adv, idx_field = load_data(opt.data_path)
 
     print("sample data")
-    pprint.pp(vars(data[0]))
+    pprint.pprint(vars(data[0]))
 
     if opt.targeted_attack:
         # if this is targeted attack
