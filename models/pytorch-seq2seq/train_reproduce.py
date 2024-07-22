@@ -37,7 +37,9 @@ def load_data(
     if "Unnamed: 0" in df.columns:
         df["index"] = df["Unnamed: 0"]
     df = df[["index", seq2seq.src_field_name, "target_tokens"]]
-    df["target_tokens"] = df["target_tokens"].apply(lambda x: " ".join(json.loads(x)))
+    df["target_tokens"] = df["target_tokens"].apply(
+        lambda x: x[1:-1].replace("'", " ").replace(",", " ")
+    )
     df.to_csv(data_path + ".csv", index=False)
     for col in df.columns:
         if col == "index":
