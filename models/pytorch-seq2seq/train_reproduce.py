@@ -1,4 +1,5 @@
 import os
+import json
 import argparse
 import logging
 import time
@@ -36,7 +37,8 @@ def load_data(
     if "Unnamed: 0" in df.columns:
         df["index"] = df["Unnamed: 0"]
     df = df[["index", seq2seq.src_field_name, "target_tokens"]]
-    df.to_csv(data_path+".csv", index=False)
+    df["target_tokens"] = df["target_tokens"].apply(lambda x: " ".join(json.loads(x)))
+    df.to_csv(data_path + ".csv", index=False)
     for col in df.columns:
         if col == "index":
             fields_inp.append(("index", idx_field))

@@ -130,6 +130,7 @@ def load_data(
     fields_inp = []
     # df["index"] = df["Unnamed: 0"]
     df = df[["index", "source_tokens", "target_tokens", "replace_content"]]
+    df["target_tokens"] = df["target_tokens"].apply(lambda x: " ".join(json.loads(x)))
     df.to_csv(data_path + ".csv", index=False)
     for col in df.columns:
         if col == "source_tokens":
